@@ -1,0 +1,41 @@
+*mangle
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+COMMIT
+*nat
+:PREROUTING ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+{redirect_rules}
+-A PREROUTING -p tcp -m tcp --dport 80 -j ACCEPT 
+-A PREROUTING -p tcp -m tcp --dport 443 -j ACCEPT 
+-A POSTROUTING -j MASQUERADE 
+COMMIT
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -s 172.16.0.0/12 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 75 --hitcount 3 --name DEFAULT --rsource -j DROP 
+-A INPUT -s 212.15.126.0/24 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 75 --hitcount 3 --name DEFAULT --rsource -j DROP 
+-A INPUT -s 212.15.125.0/24 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 75 --hitcount 3 --name DEFAULT --rsource -j DROP 
+-A INPUT -s 172.16.0.0/12 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name DEFAULT --rsource 
+-A INPUT -s 212.15.126.0/24 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name DEFAULT --rsource 
+-A INPUT -s 212.15.125.0/24 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name DEFAULT --rsource 
+-A INPUT -i lo -j ACCEPT 
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 
+-A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+{drop_rules}
+-A INPUT -s 212.15.125.0/24 -p tcp -m tcp --dport 22 -j ACCEPT 
+-A INPUT -s 212.15.126.0/24 -p tcp -m tcp --dport 22 -j ACCEPT 
+-A INPUT -s 172.16.0.0/12 -p tcp -m tcp --dport 22 -j ACCEPT 
+-A INPUT -p tcp -m tcp --dport 3128:3133 -j ACCEPT 
+-A INPUT -p tcp -m state --state NEW -m tcp -j ACCEPT 
+-A INPUT -j DROP 
+-A FORWARD -d 10.100.250.0/24 -j ACCEPT 
+-A FORWARD -d 212.15.126.131/32 -j ACCEPT 
+-A FORWARD -p tcp -m multiport --dports 443,21,22,80 -j ACCEPT 
+-A OUTPUT -j ACCEPT 
+COMMIT
